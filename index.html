@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Speed Typer</title>
+    <style>
+      body { font-family: Arial, sans-serif; background:#ffffff; color:#000000; text-align:center; }
+      .container { margin-top:40px; }
+      #word { font-size:32px; margin:20px 0; min-height:40px; }
+      .hidden { display:none; }
+      button { padding:10px 20px; font-size:18px; margin:10px; cursor:pointer; border-radius:5px; }
+      input { padding:10px; font-size:20px; width:300px; }
+      .end-game-container { margin-top:30px; font-size:26px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 style="color:#000000;">Speed Typer</h2>
+
+      <label
+        >Difficulty:
+        <select id="difficulty">
+          <option value="easy">Easy</option>
+          <option value="medium">Medium</option>
+          <option value="hard">Hard</option>
+        </select>
+      </label>
+
+      <button id="start-btn">Start Game</button>
+
+      <h1 id="word"></h1>
+
+      <input
+        id="text"
+        type="text"
+        placeholder="Type here..."
+        autocomplete="off"
+        class="hidden"
+      />
+
+      <p class="time-container hidden">Time left: <span id="time">60</span>s</p>
+      <p class="score-container hidden">Score: <span id="score">0</span></p>
+      <p class="wpm-container hidden">WPM: <span id="wpm">0</span></p>
+
+      <div id="end-game-container" class="end-game-container"></div>
+    </div>
+
+    <script>
+      const wordEl = document.getElementById("word");
+      const text = document.getElementById("text");
+      const timeEl = document.getElementById("time");
+      const scoreEl = document.getElementById("score");
+      const wpmEl = document.getElementById("wpm");
+      const endgameEl = document.getElementById("end-game-container");
+      const difficultySelect = document.getElementById("difficulty");
+      const startBtn = document.getElementById("start-btn");
+
+      let time = 60;
+      let score = 0;
+      let timerInterval;
+
+      const easyWords = [
+        "apple pie", "blue car", "happy day", "sun light", "cold water",
+        "book shelf", "quiet room", "fast dog", "red balloon", "white snow", 
+        "except between", "chicken young", "doctor haven't", "circus build", "group day",
+        "village cross", "captain bottom", "company scare", "following pencil", "parent answer",
+        "board dollar", "student clothes", "threw answer", "quite wouldn't", "swimming doesn't",
+        "field radio", "enjoy example", "breakfast harden", "radio fifth", "truly breakfast",
+        "village heavy", "caught built", "awhile hospital", "wear second", "discover parent", 
+        "chicken tomorrow", "parent pencil", "threw charge", "doesn't build", "minute mountain",
+        "visit though", "against whole", "tired instead", "police office", "warm before",
+        "other fine", "myself than", "coming tall", "goat king", "doing gone", 
+        "foot playing", "today side", "ice gold", "some teach", "keep wish",
+        "still rest", "have leg", "club has", "milk now", "wind rabbit", 
+        "eating bus", "bill child", "riding long", "cut give", "hear start",
+        "nail end", "fox then", "dry away", "by they", "fall little", 
+        "fell both", "way told", "said hard", "funny corn", "left goes", 
+        "nice jump", "sick city", "baby duck", "Fast father", "stay rock",
+        "ate hit", "mother best", "wash girl", "sang wood", "door story",
+        "hope any", "candy help", "train bat", "hop went", "made saw",
+        "white buy", "there your", "bag yellow", "fish going", "meat flag",
+        "our new", "as bike", "shoe five", "north tell", "far change",
+        "about took", "with first", "house lay", "here seem", "that light",
+        "week coat", "take very", "think part", "woke down", "while deer",
+        "store moon", "thank late", "put find", "miss truck", "cup next",
+
+      ];
+
+      const mediumWords = [
+        "away own too animal when", 
+        "great water turn cut but",
+        "even land found think want", 
+        "light something quick can name", 
+        "very under think page have",
+        "large work began all different", 
+        "make head was two father",
+        "from use with second what",
+        "through he picture four number", 
+        "along into write close want",
+        "point on second after who",
+        "some other every good me",
+        "give our under name very",
+        "through just form much great", 
+        "think say help low line",
+        "before turn house picture try", 
+        "us again animal point mother",
+        "world near build after first",
+        "these not grow this something",
+        "like very along good use",
+        "turn man by quick left",
+        "together one sentence second place", 
+        "here the off don’t tree",
+        "without these was will could", 
+        "soon face play same has",
+        "than night with song hard", 
+        "carry know about had the",
+        "you that of and without",
+        "they work find been big",
+        "high such follow saw sea",
+        "draw might small end home",
+        "rad hand port people water",
+        "over number did by hot",
+        "some what there kind walk", 
+        "example ease you sound end",
+        "late don’t out other many",
+        "out under father how word",
+        "name build self time through", 
+        "form house picture time",
+        "would write say low line try", 
+        "animal can need after then",
+        "him look two has very",
+        "think great boat us world", 
+        "near see him turn mother",
+        "out your up use way",
+        "about then them would write", 
+        "like so these her long",
+        "make thing see him two",
+        "has look back little only", 
+        "round man year came show",
+      ];
+
+      const hardWords = [
+        "'{*<: 123;456&'",
+        "The quick brown fox jumps over 13 lazy dogs.",
+        "Wait—did you see that?!", 
+        "Accuracy: 99.7% achieved.",
+        "Email me at test@example.com.", 
+        "Caffeine level: 42mg.",
+        "Turn right in 0.5 miles.", 
+        "Error #404: Not found.",
+        "Buy 12 eggs, 3 tomatoes, & 1 onion.",
+        "Speed = distance/time.", 
+        "Why so serious?!",
+        "2 #4 hotdogs, 50% off",
+        "1$ ea. for Jim & I",
+        "#~ 839;2 }*&",
+        ">' [@|&^+ 18",
+        "|-@ 8730; u/-| .>",
+        "3924;8 ,>. '[#",
+        "~-# 82946; #-~.",
+        "@!92 &8*1(2)7^+",
+        "6)4 :7{5}6^+8*2",
+        "On 11/5/06 he got 29# of bricks",
+        "$1.42, an increase of 77%.",
+        "Catalog #327 lists 9 @ $3.07.",
+        "We bought 98# of nuts/bolts @ $6.10",
+        "The students believe 4 + 4, 2 + 2,",
+        "Lu owed $1.98 and paid $7.57.",
+        "#273 lists 7 @ $1.07, 33 @ $3.40.",
+        "On 11/6 the Hartly Company* stock decreased 10 1/8",
+        "License #21479 from C&G allows a 25% discount.",
+        "#- 859271; -#~",
+        "[= 49382; =]" +"",
+        "2894; *>' |-@",
+        "_-& 46;253 -&_ !",
+        "58349; :|' +}",
+        "1830;493 ]+^|&",
+        ",^! 58243; !^, -",
+        "_+* 946732; *",
+        "839;2 }*&>' [",
+        "[~^<] 738;214",
+        "100;365 +#* (",
+        "673;492 >{?",
+        "2894; *>' |-@",
+        "!^, -{^ 927385;",
+        "63914; < |> ._",
+        "61895; ^+% -|",
+        "'{*<: 123;456 &",
+        "High own. real all;",
+        "p@ssw0rd m@nag3r$",
+        "S3cur1ty is! important&",
+        "spec1al@ characters$ like# @",
+        "10# of #8 nails, 7# of #6 bolts",
+        "The modest salary of $1133.",
+        "She ordered 170# of #1 potatoes",
+        "(which retail for 35# @ $9.)",
+        "Total cost was $373.41.",
+        "(includes a n/30 discount.)",
+        "C&G fixed our roof at 12 Plum St.",
+        "a 15% discount on 32# paper.",
+        "License #47921 from Hill & Clark",
+        "23# of bricks @ $1.42,",
+      ];
+
+      function getRandomPhrase() {
+        let d = difficultySelect.value;
+        if (d === "easy") return easyWords[Math.floor(Math.random()*easyWords.length)];
+        if (d === "medium") return mediumWords[Math.floor(Math.random()*mediumWords.length)];
+        return hardWords[Math.floor(Math.random()*hardWords.length)];
+      }
+
+      function colorizePhrase(phrase) {
+        const diff = difficultySelect.value;
+        const red = "red";
+        const cyan = "#00FFFF";
+
+        if (diff === "easy") {
+          return phrase.split(" ")
+          .map((w,i)=>`<span style='color:${i%2===0?red:cyan}'>${w}</span>`)
+          .join(" ");
+        }
+
+        return phrase.split("")
+        .map((c,i)=>`<span style='color:${i%2===0?red:cyan}'>${c}</span>`)
+        .join("");
+      }
+
+      function displayNewPhrase() {
+        const phrase = getRandomPhrase();
+        wordEl.innerHTML = colorizePhrase(phrase);
+        wordEl.dataset.raw = phrase;
+      }
+
+      function startGame() {
+        startBtn.classList.add("hidden");
+        text.classList.remove("hidden");
+        document.querySelectorAll('.time-container, .score-container, .wpm-container')
+          .forEach(el => el.classList.remove('hidden'));
+
+        score = 0;
+        time = 60;
+        scoreEl.textContent = 0;
+        timeEl.textContent = 60;
+        wpmEl.textContent = 0;
+        text.value = "";
+        text.disabled = false;
+
+        displayNewPhrase();
+        text.focus();
+
+        timerInterval = setInterval(() => {
+          time--;
+          timeEl.textContent = time;
+
+          let minutesPassed = (60 - time) / 60;
+          if (minutesPassed > 0) wpmEl.textContent = Math.round(score / minutesPassed);
+
+          if (time <= 0) endGame();
+        }, 1000);
+      }
+
+      function endGame() {
+        clearInterval(timerInterval);
+        text.disabled = true;
+        endgameEl.innerHTML = `<h2>Time's up!</h2><p>Your final score: ${score}</p>
+          <button id='replay-btn'>Replay</button>`;
+        document.getElementById('replay-btn').onclick = () => restartGame();
+      }
+
+      function restartGame() {
+        endgameEl.innerHTML = "";
+        startGame();
+      }
+
+      text.addEventListener("input", () => {
+        if (text.value.trim() === wordEl.dataset.raw) {
+          score++;
+          scoreEl.textContent = score;
+          text.value = "";
+          displayNewPhrase();
+        }
+      });
+
+      startBtn.onclick = startGame;
+    </script>
+  </body>
+</html>
